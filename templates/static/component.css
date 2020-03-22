@@ -1,0 +1,167 @@
+.js .inputfile {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+push_button {
+    position: relative;
+    width:220px;
+    height:40px;
+    text-align:center;
+    color:#FFF;
+    text-decoration:none;
+    line-height:43px;
+    font-family:'Oswald', Helvetica;
+    display: block;
+    margin: 30px;
+}
+.push_button:before {
+    background:#f0f0f0;
+    background-image:-webkit-gradient(linear, 0% 0%, 0% 100%, from(#D0D0D0), to(#f0f0f0));
+    
+    -webkit-border-radius:5px;
+    -moz-border-radius:5px;
+    border-radius:5px;
+    
+    -webkit-box-shadow:0 1px 2px rgba(0, 0, 0, .5) inset, 0 1px 0 #FFF; 
+    -moz-box-shadow:0 1px 2px rgba(0, 0, 0, .5) inset, 0 1px 0 #FFF; 
+    box-shadow:0 1px 2px rgba(0, 0, 0, .5) inset, 0 1px 0 #FFF;
+    
+    position: absolute;
+    content: "";
+    left: -6px; right: -6px;
+    top: -6px; bottom: -10px;
+    z-index: -1;
+}
+
+.push_button:active {
+    -webkit-box-shadow:0 1px 0 rgba(255, 255, 255, .5) inset, 0 -1px 0 rgba(255, 255, 255, .1) inset;
+    top:5px;
+}
+.push_button:active:before{
+    top: -11px;
+    bottom: -5px;
+    content: "";
+}
+
+.red {
+    text-shadow:-1px -1px 0 #A84155;
+    background: #D25068;
+    border:1px solid #D25068;
+    
+    background-image:-webkit-linear-gradient(top, #F66C7B, #D25068);
+    background-image:-moz-linear-gradient(top, #F66C7B, #D25068);
+    background-image:-ms-linear-gradient(top, #F66C7B, #D25068);
+    background-image:-o-linear-gradient(top, #F66C7B, #D25068);
+    background-image:linear-gradient(to bottom, #F66C7B, #D25068);
+    
+    -webkit-border-radius:5px;
+    -moz-border-radius:5px;
+    border-radius:5px;
+    
+    -webkit-box-shadow:0 1px 0 rgba(255, 255, 255, .5) inset, 0 -1px 0 rgba(255, 255, 255, .1) inset, 0 4px 0 #AD4257, 0 4px 2px rgba(0, 0, 0, .5);
+    -moz-box-shadow:0 1px 0 rgba(255, 255, 255, .5) inset, 0 -1px 0 rgba(255, 255, 255, .1) inset, 0 4px 0 #AD4257, 0 4px 2px rgba(0, 0, 0, .5);
+    box-shadow:0 1px 0 rgba(255, 255, 255, .5) inset, 0 -1px 0 rgba(255, 255, 255, .1) inset, 0 4px 0 #AD4257, 0 4px 2px rgba(0, 0, 0, .5);
+}
+
+.red:hover {
+    background: #F66C7B;
+    background-image:-webkit-linear-gradient(top, #D25068, #F66C7B);
+    background-image:-moz-linear-gradient(top, #D25068, #F66C7B);
+    background-image:-ms-linear-gradient(top, #D25068, #F66C7B);
+    background-image:-o-linear-gradient(top, #D25068, #F66C7B);
+    background-image:linear-gradient(top, #D25068, #F66C7B);
+}
+
+
+.inputfile + label {
+    max-width: 80%;
+    font-size: 1.25rem;
+    /* 20px */
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    display: inline-block;
+    overflow: hidden;
+    padding: 0.625rem 1.25rem;
+    /* 10px 20px */
+}
+
+.no-js .inputfile + label {
+    display: none;
+}
+
+.inputfile:focus + label,
+.inputfile.has-focus + label {
+    outline: 1px dotted #000;
+    outline: -webkit-focus-ring-color auto 5px;
+}
+
+.inputfile + label * {
+    /* pointer-events: none; */
+    /* in case of FastClick lib use */
+}
+
+.inputfile + label svg {
+    width: 1em;
+    height: 1em;
+    vertical-align: middle;
+    fill: currentColor;
+    margin-top: -0.15em;
+    /* 4px */
+    margin-right: 0.25em;
+    /* 4px */
+}
+
+
+
+/* style 4 */
+
+.inputfile-4 + label {
+    color: #d3394c;
+}
+
+.inputfile-4:focus + label,
+.inputfile-4.has-focus + label,
+.inputfile-4 + label:hover {
+    color: #722040;
+}
+
+.inputfile-4 + label figure {
+    width: 100px;
+    height: 100px;
+    border-radius: 40%;
+    background-color: #d3394c;
+    display: block;
+    padding: 20px;
+    margin: 0 auto 5px;
+}
+
+.inputfile-4:focus + label figure,
+.inputfile-4.has-focus + label figure,
+.inputfile-4 + label:hover figure {
+    background-color: #722040;
+}
+
+.inputfile-4 + label svg {
+    width: 100%;
+    height: 100%;
+    fill: #f1e5e6;
+}
+
+
+
+
+/* style 6 */
+
+
+
+@media screen and (max-width: 50em) {
+	.inputfile-6 + label strong {
+		display: block;
+	}
+}
