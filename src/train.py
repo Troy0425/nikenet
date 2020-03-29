@@ -3,40 +3,19 @@
 """Implementation of Mobilenet V3.
 Architecture: https://arxiv.org/pdf/1905.02244.pdf
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import copy
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import dataloader
+from utils import normalize, train_in_batch, shuffle_data, augument_data
 import tensorflow as tf
+import copy
+import numpy as np
+import random
 from model import mobilenet_v3_small , mobilenet_v3_large
-import src.dataloader as dataloader
-from src.utils import normalize, train_in_batch, shuffle_data, augument_data
-
-__all__ = ['mobilenet_v3_large', 'mobilenet_v3_small']
-
-
-def accuracy(prediction, labels):
-        #print("pred:",prediction)
-        #print("labels: ",labels)
-        labels = tf.cast(tf.reshape(labels,[-1]),tf.int64)
-        prediction = tf.argmax(prediction, 1)
-        correct_prediction = tf.equal(prediction, labels)
-        #print("correct: ",correct_prediction)
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-        #print("acc: ",accuracy)
-        return accuracy
-
-def _make_divisible(v, divisor=8, min_value=None):
-    if min_value is None:
-        min_value = divisor
-    new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
-    # Make sure that round down does not go down by more than 10%.
-    if new_v < 0.9 * v:
-        new_v += divisor
-    return new_v
-
 
 def semi_triplet_loss(Embedding, labels):
     labels = tf.reshape(labels,[-1])
@@ -50,8 +29,33 @@ def cross_entropy(prediction, labels):
     sparse = tf.reduce_mean(sparse)
     return sparse
 
-
-
+def accuracy(prediction, labels):
+	labels = tf.cast(tf.reshape(labels,[-1]),tf.int64)
+	prediction = tf.argmax(prediction, 1)
+	correct_prediction = tf.equal(prediction, labels)
+	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+	return accuracy
+def triplet_val(ground_truth_vector, ground_truth_label, testing_vector, testing_label):
+    correct = 0
+    number = len(testing_vector)
+    for i in range(len(testing_vector)):
+        dis_index = [None]*103
+        index = [i for i in range(103)]
+        for j in range(len(ground_truth_vector)):
+            d = np.linalg.norm(testing_vector[i] - ground_truth_vector[j])
+            #dis_index.append([d,j])
+            label_index=ground_truth_label[j][0]
+            if(dis_index[label_index]!=None):
+                if(dis_index[label_index]>d):
+                    dis_index[label_index]=d
+            else:
+                dis_index[label_index]=d
+        top_index = sorted(zip(dis_index, index))[:1]    
+        for idx in top_index:
+            if testing_label[i] == idx[1]:
+                correct += 1
+                break
+    return correct / number
 if __name__ == "__main__":
     ''' Original Testing '''
     print("begin ...")
@@ -62,7 +66,7 @@ if __name__ == "__main__":
     print("done !")
 
     ''' Application '''
-    data_path = 'dataset/downloads'
+    data_path = 'dataset/image103'
     tf.reset_default_graph()
     with tf.name_scope('input'):
         inputs = tf.placeholder(tf.float32, [None, 224, 224, 1])        
@@ -91,10 +95,10 @@ if __name__ == "__main__":
 
         loss = tf.add(tf.multiply(alpha,triplet_loss), tf.multiply(beta, softmax_loss))        
         #optim = tf.train.AdamOptimizer().minimize(loss)
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)  
-        with tf.control_dependencies(update_ops): #保证train_op在update_ops执行之后再执行。  
-            optim = tf.train.AdamOptimizer().minimize(loss) 
-
+        adam = tf.train.AdamOptimizer()
+        optim = adam.minimize(loss)
+        #trainer = tf.compat.v1.train.AdamOptimizer() 
+        #optim = trainer.minimize(loss)
         # exp step size
         # global_step = tf.Variable(0, trainable=False)
         # starter_learning_rate = 0.05
@@ -108,30 +112,38 @@ if __name__ == "__main__":
     batch_size_triplet = 4
     batch_size_softmax = 64
     iteration = 10000//batch_size_softmax
-    #saver = tf.train.Saver()
-    saver = tf.train.Saver(var_list=tf.global_variables())
+    saver = tf.train.Saver()
     max_val_acc = 0
     start_triplet = 0
-    min_triplet_loss = 1
-    triplet_goal = 0.1
+    max_val_triplet_acc = 0
+    triplet_goal = 0.7
+    softmax_goal = 0.7
+    val_triplet_acc = 0
     logfile = open("log.txt", "w")
 
-
+    
     with tf.Session() as sess:
-        
         sess.run(tf.global_variables_initializer())
-        #saver.restore(sess, "./mobile_checkpoint/new_mobile_val.ckpt")
-        triplet_TrainData, TestData = dataloader.dataloader(data_path,batch_size_triplet)
+        #saver.restore(sess, "./mobile_checkpoint/320.ckpt")
+        triplet_TrainData, TestData = dataloader.dataloader(data_path)
         softmax_TrainData = dataloader.triplet_to_softmax(triplet_TrainData)
         x_test,y_test,end=dataloader.GenNoBatch(TestData)
         print("Start Training")
+        #######Prepare triplet validtion data####### 
+        train_val_data = []
+        train_val_label = []
+        for i in range(len(triplet_TrainData)):
+            sample_index = random.sample(range(0, len(triplet_TrainData[i])), 10) 
+            for j in sample_index:
+                train_val_data.append(dataloader.loaddata(triplet_TrainData[i][j][0]))
+                train_val_label.append([triplet_TrainData[i][j][1]])
         for epoch in range(epochs):
             ########Training Stage#######
             if start_triplet == 0:
-                if max_val_acc > 0.7:
+                if max_val_acc > softmax_goal:
                     start_triplet = 1
             if start_triplet == 1:
-                if min_triplet_loss < triplet_goal:
+                if max_val_triplet_acc > triplet_goal:
                     start_triplet = 2
 
             #######Which Type of Data#######
@@ -166,38 +178,46 @@ if __name__ == "__main__":
                 else:
                     if end == 1:
                         break
-
                 real_iteration += 1
 
-
                 x_train = augument_data(x_train,False)
+                x_train = x_train/255.0
+
                 training_loss_batch, _,training_acc_batch,pred,TL,SL = sess.run(
                     [loss,optim,acc,softmax,triplet_loss,softmax_loss],
+
                     feed_dict={inputs:x_train,y_true:y_train,alpha:alpha_input,beta:beta_input}
                 )
                 training_acc += training_acc_batch
                 triplet_sum += TL
-            
-            testing_acc = sess.run(
-                [acc],
+                #print(opt)
+            #######Testing softmax#######
+            testing_acc, test_val_vector,lr= sess.run(
+                [acc,triplet,adam._lr_t],
                 feed_dict={inputs:x_test,y_true:y_test,alpha:alpha_input,beta:beta_input}
             )
+            ######Testing triplet########
+            if start_triplet != 0:
+                train_val_vector = sess.run([triplet],feed_dict={inputs:train_val_data, y_true: train_val_label})
+                val_triplet_acc = triplet_val(train_val_vector[0], train_val_label, test_val_vector, y_test)
             #######Saving Condition#######
-            if start_triplet == 2 and (triplet_sum / real_iteration) < min_triplet_loss and testing_acc > max_val_acc:
-                saver.save(sess, "./mobile_checkpoint/new_mobile_goal.ckpt")
-                
-            if testing_acc[0] > max_val_acc:
-                max_val_acc = testing_acc[0]
-            if triplet_sum / real_iteration < min_triplet_loss:
-                min_triplet_loss = triplet_sum / real_iteration
+            if start_triplet != 0 and val_triplet_acc > max_val_triplet_acc :
+                print("Save!!!")
+                #saver.save(sess, "./mobile_checkpoint/%d.ckpt"%(epoch))
 
-            print("epoch:%d Stage:%d train_acc:%.3f val_acc:%.3f triplet_loss:%.3f max_val_acc:%.3f min_TL:%.3f"
-                %(epoch, start_triplet, training_acc/real_iteration, testing_acc[0], 
-                  triplet_sum/real_iteration, max_val_acc, min_triplet_loss)
+                
+            if testing_acc > max_val_acc:
+                max_val_acc = testing_acc
+            if val_triplet_acc > max_val_triplet_acc:
+                max_val_triplet_acc = val_triplet_acc
+
+            print("epoch:%d Stage:%d train_acc:%.3f val_acc:%.3f triplet_val_acc:%.3f max_val_acc:%.3f max_val_triplet_acc:%.3f lr:%.6f"
+                %(epoch, start_triplet, training_acc/real_iteration, testing_acc, 
+                  val_triplet_acc, max_val_acc, max_val_triplet_acc,lr)
             )
-            logfile.write("epoch:%d Stage:%d train_acc:%.3f val_acc:%.3f triplet_loss:%.3f max_val_acc:%.3f min_TL:%.3f\n"
-                %(epoch, start_triplet, training_acc/real_iteration, testing_acc[0], 
-                  triplet_sum/real_iteration, max_val_acc, min_triplet_loss)
+            logfile.write("epoch:%d Stage:%d train_acc:%.3f val_acc:%.3f triplet_val_acc:%.3f max_val_acc:%.3f max_val_triplet_acc:%.3f lr:%.6f\n"
+                %(epoch, start_triplet, training_acc/real_iteration, testing_acc, 
+                  val_triplet_acc, max_val_acc, max_val_triplet_acc,lr)
             )
 
         saver.save(sess, "./mobile_checkpoint/new_mobile_val_last.ckpt")

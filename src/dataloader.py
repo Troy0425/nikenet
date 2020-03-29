@@ -9,11 +9,11 @@ def loaddata(img_name):
     pic = cv2.imread(img_name)
     pic = cv2.resize(pic, (224,224), interpolation=cv2.INTER_CUBIC)
     pic = cv2.cvtColor(pic,cv2.COLOR_BGR2GRAY)
-
+    
     #pic = cv2.normalize(pic,None,0,255,cv2.NORM_MINMAX)
     #pic = cv2.normalize(pic, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
     pic =  pic[:,:,np.newaxis]
-    return pic/255.0
+    return pic#/255.0
 def GenBatch(TrainData,bsize=4):
     class_num = len(TrainData)
     if(len(TrainData)<bsize):
@@ -74,10 +74,10 @@ def dataloader(data_path):
     index=0
     TrainData=[]
     TestData=[]
-    ratio=1 #0.95
+    ratio=0.95
     for dicname in (os.listdir(dataset)):
         path=os.path.join(dataset,dicname)
-        if path == 'dataset/downloads/.DS_Store' : continue
+        if path == 'dataset/image103/.DS_Store' : continue
         TrainData.append([])
         TestData.append([])
         class_size=len(os.listdir(path))
@@ -94,6 +94,7 @@ def dataloader(data_path):
         index+=1
     return TrainData, TestData
 
+        
 def GenNoBatch(TestData):
     input = []
     label = []
@@ -113,14 +114,14 @@ def GenNoBatch(TestData):
     return np.array(input), np.array(label),end
 
 if __name__ == '__main__':
-    dataset='dataset/downloads'
+    dataset='dataset/image103'
     index=0
     TrainData=[]
     # file_set = [file for file in os.listdir(dataset)]
     for dicname in (os.listdir(dataset)):
         #TrainData.append([])
         path=os.path.join(dataset,dicname)
-        if path == 'dataset/downloads/.DS_Store' : continue
+        if path == 'dataset/image103/.DS_Store' : continue
         #print(len(os.listdir(path)))
         #print((path))
         #if(len(os.listdir(path))<10):
