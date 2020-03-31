@@ -6,4 +6,5 @@ Use tensorflow to build a machine learning model to recognize model of nike shoe
 Use coreml to build an iphone app.
 ## How it works
 Model: Triplet network(MobileNet V3 as backbone)  
-Loss: Semi-hard triplet loss
+Loss: Semi-hard triplet loss  
+Data: Use Google Images Download to collect shoes image
